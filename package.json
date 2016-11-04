@@ -1,0 +1,33 @@
+{
+  "name": "hubot-service-now",
+  "version": "0.0.0",
+  "description": "A hubot script to perform record lookups to a Service Now instance",
+  "main": "index.coffee",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:disney/hubot-service-now.git"
+  },
+  "bugs": {
+    "url": "https://github.com/disney/hubot-service-now/issues"
+  },
+  "keywords": [
+    "hubot",
+    "hubot-scripts"
+  ],
+  "author": "Ian C. Ward <ian.ward@disney.com>",
+  "license": "Modified Apache 2.0",
+  "dependencies": {
+    "hubot": "^2.10.0",
+    "hubot-redis-brain": "^0.0.3",
+    "hubot-scripts": "^2.17.2"
+  },
+  "devDependencies":{
+    "chai": "1.9.2",
+    "mocha": "3.1.2",
+    "sinon": "1.10.3",
+    "sinon-chai": "2.5.0"
+  },
+  "scripts": {
+    "test": "mocha -R spec --compilers coffee:coffee-script test/service-now.coffee"
+  },
+}
