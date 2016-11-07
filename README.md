@@ -2,7 +2,7 @@
 A hubot script to perform record lookups to a Service Now Instance
 
 ## Installation
-Add `hubot-service-now` to you `external-scripts.json` file:
+Add `hubot-service-now` to your `external-scripts.json` file:
 ```json
 "dependencies": {
   "hubot": "^2.19.0",

@@ -7,7 +7,8 @@
 #
 # Configuration:
 #   HUBOT_SERVICE_NOW_INSTANCE: Service Now instance (e.g. 'devtest' of devtest.service-now.com)
-#   HUBOT_SERVICE_NOW_DOMAIN: Domain name for Serivce Now. defaults to service-now.com. Useful for using internal proxies
+#   HUBOT_SERVICE_NOW_DOMAIN: Override FQDN for service now instance
+#     useful if you need to use an internal proxy
 #   HUBOT_SERVICE_NOW_USER: Service Now API Username
 #   HUBOT_SERVICE_NOW_PASSWORD: Service Now API Password
 
@@ -18,100 +19,86 @@ module.exports = (robot) ->
   event so that you can consume this in other scripts if you'd like.
   The expected format of the 'request' object is as follows:
   request =
-    sysparm_fields,
-    sysparm_query,
-    sysparm_limit,
+    table,
+    rec_number,
+    fields,
     user
 
-    The sysparm_fields, sysparm_query, and sysparm_limit strings are used in
-    the Service Now query. The user object should be a room or user that the
-    script can respond to if it runs into an error.
+    table and rec_number should be strings
+    fields should be an object of keys/values, where the key is the record field
+      and the value is the human-readable description
+    The user object should be a room or user that the script should return
+      the results to
   ###
-  robot.on "sn_api_get", (request) ->
-    if process.env?.HUBOT_SERVICE_NOW_HOSTNAME?
-      sn_domain = process.env.HUBOT_SERVICE_NOW_HOSTNAME
-    else
-      sn_domain = 'service-now.com'
-    sn_uri = "https://#{process.env.HUBOT_SERVICE_NOW_INSTANCE}.#{sn_domain}"
+  robot.on "sn_record_get", (request) ->
+    query_fields = Object.keys(request.fields)
+    sn_domain = process.env.HUBOT_SERVICE_NOW_DOMAIN
+    sn_instance = process.env.HUBOT_SERVICE_NOW_INSTANCE
+    if sn_domain? and sn_instance?
+      robot.logger.error "HUBOT_SERVICE_NOW_DOMAIN and \
+HUBOT_SERVICE_NOW_INSTANCE can't be set at the same time. Use one or the other"
+    else if sn_domain?
+      sn_fqdn = "https://#{sn_domain}"
+    else if sn_instance?
+      sn_fqdn = "https://#{sn_instance}.service-now.com"
 
-###
-
-
-
-  robot.on "sn_api_get", (request) ->
-    fields = Object.keys(request.fields)
-    robot.logger.debug "fields: #{fields}"
-    sn_url = "https://snapi.lns.starwave.com/api/now/v2/table/\
-#{request.table}?sysparm_query=number=#{request.number}\
-&sysparm_fields=#{fields}"
+    api_url = "#{sn_fqdn}/api/now/v2/table/#{request.table}"
+    req_args = "sysparm_query=number=#{request.rec_number}&\
+sysparm_display_value=true&sysparm_limit=1&sysparm_fields=#{query_fields}"
+    sn_url = "#{api_url}?#{req_args}"
 
     robot.logger.debug "SN URL: #{sn_url}"
+    sn_user = process.env.HUBOT_SERVICE_NOW_USER
+    sn_pass = process.env.HUBOT_SERVICE_NOW_PASSWORD
+
+    unless sn_user? and sn_pass?
+      robot.logger.error "HUBOT_SERVICE_NOW_USER and HUBOT_SERVICE_NOW_PASSWORD\
+ Must be defined!"
+      robot.send request.user, "Integration user name and password are not \
+defined. I can't look up Service Now Requests without them"
+
     robot.http(sn_url)
       .header('Accept', 'application/json')
-      .auth(process.env.HUBOT_SNAPI_USER, process.env.HUBOT_SNAPI_PASSWORD)
+      .auth(process.env.HUBOT_SERVICE_NOW_USER,
+        process.env.HUBOT_SERVICE_NOW_PASSWORD)
       .get() (err, res, body) ->
         if (err?)
-          robot.send request.user "Error was encountered while looking for \
+          robot.send request.user, "Error was encountered while looking for \
 `#{request.number}`"
-          robot.logger.error "Received error #{err} when looking for #{request.number}"
-        else
-          data = JSON.parse body
-          result = data['result']
-        if result?
-          if (result.length < 1)
-            robot.send request.user, "Service Now returned 0 records for \
-'#{request.number}'"
-          else
-            if (result.length > 1)
-              robot.send request.user, "Service Now returned multiple records. \
-  Showing the first"
-            robot.emit "sn_results_fmt", {
-              user: request.user,
-              fields: request.fields,
-              number: request.number,
-              record: result[0],
-              table: request.table
-            }
-        else
+          robot.logger.error "Received error #{err} when looking for \
+`#{request.number}`"
+          return
+
+        data = JSON.parse body
+        result = data['result']
+
+        unless result?
           robot.send request.user, "Error was encountered while looking for \
 `#{request.number}`"
           robot.logger.error "Received error '#{data.error.message}' while \
 looking for '#{request.number}'"
+          return
 
-  robot.on "sn_results_fmt", (result) ->
-    output = "Found *#{result.number}:*"
-    for k, v of result.fields
-      continue if v == ''
-      robot.logger.debug "Getting #{k} from result"
-      output += "\n*#{v}:* #{result.record[k]}"
-
-    robot.emit "get_state_print_output", {
-      user: result.user
-      output: output,
-      table: result.table,
-      state: result.record.state
-    }
-
-  robot.on "get_state_print_output", (record) ->
-    # get state text
-    sn_url = "https://snapi.lns.starwave.com/api/now/v2/table/sys_choice?sysparm_query=name=#{record.table}^element=state^value=#{record.state}^language=en"
-    robot.logger.debug "state sn_url: #{sn_url}"
-    robot.http(sn_url)
-      .header('Accept', 'application/json')
-      .auth(process.env.HUBOT_SNAPI_USER, process.env.HUBOT_SNAPI_PASSWORD)
-      .get() (err, res, body) ->
-        if (err?)
-          robot.logger.debug "state got error from SNAPI: #{err}"
-          state_text = ''
+        if (result.length < 1)
+          robot.send request.user, "Service Now returned 0 records for \
+'#{request.number}'"
         else
-          data = JSON.parse body
-          label = data.result[0].label
-          state_text = label
+          rec_count = res.headers['X-Total-Count']
+          if (rec_count > 1)
+            robot.send request.user, "Service Now returned #{rec_count} \
+records. Showing the first"
+          sn_single_result_fmt(request.user, request.fields,
+            request.rec_number, result[0])
 
-        robot.logger.debug "state_text: #{state_text}"
-        output = record.output + "\n*State:* #{state_text}"
+  sn_single_result_fmt = (user, fields, rec_number, result) ->
+    output = "Found *#{rec_number}:*"
 
-        robot.send record.user, output
+    for k, v of fields
+      robot.logger.debug "Getting #{k} from result"
+      output += "\n*#{v}:* #{result[k]}"
+
+    robot.send user, output
+    return
 
   robot.respond /(?:sn(?:ow)?|service now) ([A-z]{3,5})([0-9]{7})/i, (res) ->
     rec_type = res.match[1]
@@ -121,11 +108,11 @@ looking for '#{request.number}'"
       robot.logger.debug "Record: #{rec_type}#{rec_num}"
       robot.logger.debug "user: #{res.message.user.name}"
       robot.logger.debug "table: #{table_lookup[rec_type]['table']}"
-      robot.emit "sn_api_get", {
+      robot.emit "sn_record_get", {
         user: res.message.user,
         table: table_lookup[rec_type]['table'],
         fields: table_lookup[rec_type]['fields']
-        number: "#{rec_type}#{rec_num}"
+        rec_number: "#{rec_type}#{rec_num}"
       }
     else
       robot.logger.debug "No table_lookup entry for #{rec_type} records"
@@ -159,7 +146,7 @@ looking for '#{request.number}'"
         'opened_by.name': 'Opened by',
         'opened_at': 'Opened at',
         'priority': 'Priority'
-        'state': ''
+        'state': 'State'
     INC:
       table: 'incident',
       fields:
@@ -168,7 +155,7 @@ looking for '#{request.number}'"
         'opened_by.name': 'Opened by',
         'opened_at': 'Opened at',
         'priority': 'Priority'
-        'state': ''
+        'state': 'State'
     CHG:
       table: 'change_request'
       fields:
@@ -177,7 +164,7 @@ looking for '#{request.number}'"
         'assignment_group.name': 'Assignment group',
         'requested_by.name': 'Requested by',
         'opened_at': 'Opened At'
-        'state': ''
+        'state': 'State'
     RITM:
       table: 'sc_req_item'
       fields:
@@ -185,7 +172,7 @@ looking for '#{request.number}'"
         'assignment_group.name': 'Assignment group',
         'opened_by.name': 'Opened by',
         'opened_at': 'Opened At'
-        'state': ''
+        'state': 'State'
 
   # this works similar to the robot.respond message above,
   # but it looks only for the record types we know about
@@ -212,9 +199,9 @@ looking for '#{request.number}'"
     robot.logger.debug "Record: #{rec_type}#{rec_num}"
     robot.logger.debug "user: #{res.message.user.name}"
     robot.logger.debug "table: #{table_lookup[rec_type]['table']}"
-    robot.emit "sn_api_get", {
+    robot.emit "sn_record_get", {
       user: res.message.user,
       table: table_lookup[rec_type]['table'],
       fields: table_lookup[rec_type]['fields']
-      number: "#{rec_type}#{rec_num}"
+      rec_number: "#{rec_type}#{rec_num}"
     }
