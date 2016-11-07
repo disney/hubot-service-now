@@ -64,9 +64,9 @@ defined. I can't look up Service Now Requests without them"
       .get() (err, res, body) ->
         if (err?)
           robot.send request.user, "Error was encountered while looking for \
-`#{request.number}`"
+`#{request.rec_number}`"
           robot.logger.error "Received error #{err} when looking for \
-`#{request.number}`"
+`#{request.rec_number}`"
           return
 
         data = JSON.parse body
@@ -74,14 +74,14 @@ defined. I can't look up Service Now Requests without them"
 
         unless result?
           robot.send request.user, "Error was encountered while looking for \
-`#{request.number}`"
+`#{request.rec_number}`"
           robot.logger.error "Received error '#{data.error.message}' while \
-looking for '#{request.number}'"
+looking for '#{request.rec_number}'"
           return
 
         if (result.length < 1)
           robot.send request.user, "Service Now returned 0 records for \
-'#{request.number}'"
+'#{request.rec_number}'"
         else
           rec_count = res.headers['X-Total-Count']
           if (rec_count > 1)
