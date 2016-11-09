@@ -17,17 +17,27 @@
   "author": "Ian C. Ward <ian.ward@disney.com>",
   "license": "Modified Apache 2.0",
   "dependencies": {
-    "hubot": "^2.10.0",
-    "hubot-redis-brain": "^0.0.3",
-    "hubot-scripts": "^2.17.2"
+    "hubot-redis-brain": "^0.0.3"
+  },
+  "peerDependencies": {
+    "hubot": "2.x"
   },
   "devDependencies":{
-    "chai": "1.9.2",
-    "mocha": "3.1.2",
-    "sinon": "1.10.3",
-    "sinon-chai": "2.5.0"
+    "hubot-test-helper": "^1.3.0",
+    "chai": "^2.1.1",
+    "coffee-script": "1.6.3",
+    "grunt": "^0.4.5",
+    "grunt-cli": "^0.1.13",
+    "grunt-contrib-watch": "~0.6.1",
+    "grunt-mocha-test": "~0.12.7",
+    "grunt-release": "~0.11.0",
+    "hubot": "2.x",
+    "matchdep": "~0.3.0",
+    "mocha": "^2.1.0",
+    "sinon": "^1.13.0",
+    "sinon-chai": "^2.7.0"
   },
   "scripts": {
-    "test": "mocha -R spec --compilers coffee:coffee-script test/service-now.coffee"
-  },
+    "test": "grunt test"
+  }
 }
