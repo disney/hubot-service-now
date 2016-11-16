@@ -63,6 +63,7 @@ defined. I can't look up Service Now Requests without them"
         process.env.HUBOT_SERVICE_NOW_PASSWORD)
       .get() (err, res, body) ->
         if (err?)
+          robot.send request.user, err
           robot.send request.user, "Error was encountered while looking for \
 `#{request.rec_number}`"
           robot.logger.error "Received error #{err} when looking for \
@@ -150,7 +151,7 @@ records. Showing the first"
     INC:
       table: 'incident',
       fields:
-        'short_description': 'Sort Description',
+        'short_description': 'Short Description',
         'assigned_to.name': 'Assigned to',
         'opened_by.name': 'Opened by',
         'opened_at': 'Opened at',
