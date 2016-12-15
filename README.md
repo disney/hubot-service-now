@@ -14,6 +14,18 @@ Add `hubot-service-now` to your `external-scripts.json` file:
 
 Install the package: `npm install hubot-service-now --save`
 
+### Required Environment Variables
+In order to use this script, you will need to set a few environment variables:
+||Environment Variable||Purpose||
+|`HUBOT_SERVICE_NOW_INSTANCE`|Service Now subdomain that represents instance. For example, `devtest` of `devtest.service-now.com`|
+|`HUBOT_SERVICE_NOW_DOMAIN`|Use instead of `HUBOT_SERVICE_NOW_INSTANCE`; used to override the full FQDN used to connect to Service Now, useful for internal proxies|
+|`HUBOT_SERVICE_NOW_USER`|User with API access rights|
+|`HUBOT_SERVICE_NOW_PASSWORD`|Password associated with above user|
+
+### Testing
+This repository has a Gruntfile that describes a `test` task, which can be used for testing. The script is tested with `chai`, `nock`, and `hubot-test-helper`, and all new features should have associated tests, before the feature is released.
+To test the script, run `grunt test` from the repository root.
+
 ## Sample Interaction
 ```
 user1>> hubot snow INC0000001
