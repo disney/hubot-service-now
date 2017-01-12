@@ -16,7 +16,9 @@ Install the package: `npm install hubot-service-now --save`
 
 ### Required Environment Variables
 In order to use this script, you will need to set a few environment variables:
-||Environment Variable||Purpose||
+
+|Environment Variable|Purpose|
+|--------------------|-------|
 |`HUBOT_SERVICE_NOW_INSTANCE`|Service Now subdomain that represents instance. For example, `devtest` of `devtest.service-now.com`|
 |`HUBOT_SERVICE_NOW_DOMAIN`|Use instead of `HUBOT_SERVICE_NOW_INSTANCE`; used to override the full FQDN used to connect to Service Now, useful for internal proxies|
 |`HUBOT_SERVICE_NOW_USER`|User with API access rights|
