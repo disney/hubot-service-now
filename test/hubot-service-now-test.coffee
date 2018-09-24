@@ -135,6 +135,7 @@ describe 'hubot-service-now', ->
       response_fields = {}
       for k1, v1 of v.fields
         response_fields[k1] = v1['value']
+      request_fields = Object.keys(v.fields).concat(['sys_id'])
 
       nock('https://devtest.service-now.com')
         .get("/api/now/v2/table/#{v.table}")
@@ -142,7 +143,7 @@ describe 'hubot-service-now', ->
           sysparm_query: "number=#{k}0000001",
           sysparm_display_value: true,
           sysparm_limit: 1,
-          sysparm_fields: Object.keys(v.fields).join(',')
+          sysparm_fields: request_fields.join(',')
         )
         .reply(200, {
           result: [
@@ -185,6 +186,7 @@ describe 'hubot-service-now', ->
         response_fields = {}
         for k1, v1 of v.fields
           response_fields[k1] = v1['value']
+        request_fields = Object.keys(v.fields).concat(['sys_id'])
 
         # use nock to stub the response from the API call
         nock('https://devtest.service-now.com')
@@ -193,7 +195,7 @@ describe 'hubot-service-now', ->
             sysparm_query: "number=#{k}0000001",
             sysparm_display_value: true,
             sysparm_limit: 1,
-            sysparm_fields: Object.keys(v.fields).join(',')
+            sysparm_fields: request_fields.join(',')
           )
           .reply(200, {
             result: [
@@ -211,3 +213,41 @@ describe 'hubot-service-now', ->
             ['bob', "@hubot sn #{k}0000001"]
             ['hubot', response_message]
           ]
+
+  context 'when sys_id is supplied in sn_single_result_fmt event', ->
+    it "adds hyperlink to service now in ticket response", ->
+      # use nock to stub the response from the API call
+      record = records['RITM']
+      response_fields = {}
+      for k1, v1 of record['fields']
+        response_fields[k1] = v1['value']
+      response_fields['sys_id'] = 'aaaaaaaaaaaaaaaaabbbcccc11223345'
+
+      request_fields = Object.keys(record['fields']).concat(['sys_id'])
+
+      nock('https://devtest.service-now.com')
+        .get("/api/now/v2/table/#{record['table']}")
+        .query(
+          sysparm_query: "number=RITM0000001",
+          sysparm_display_value: true,
+          sysparm_limit: 1,
+          sysparm_fields: request_fields.join(',')
+        )
+        .reply(200, {
+          result: [
+            response_fields
+          ]}, {
+            'X-Total-Count': 1
+        })
+
+      # generate the expected bot response
+      slack_record_url = 'https://devtest.service-now.com/nav_to.do?uri=/sc_req_item.do?' +
+        'sys_id=aaaaaaaaaaaaaaaaabbbcccc11223345'
+      response_message = "Found *<#{slack_record_url}|RITM0000001>:*"
+      for k, v of record.fields
+        response_message += "\n*#{v['name']}:* #{v['value']}"
+      @room.user.say('bob', "@hubot sn RITM0000001").then =>
+        expect(@room.messages).to.eql [
+          ['bob', "@hubot sn RITM0000001"]
+          ['hubot', response_message]
+        ]

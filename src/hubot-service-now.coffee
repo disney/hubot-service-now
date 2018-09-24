@@ -14,6 +14,16 @@
 
 
 module.exports = (robot) ->
+  sn_domain = process.env.HUBOT_SERVICE_NOW_DOMAIN
+  sn_instance = process.env.HUBOT_SERVICE_NOW_INSTANCE
+  if sn_domain? and sn_instance?
+    robot.logger.error "HUBOT_SERVICE_NOW_DOMAIN and " +
+    "HUBOT_SERVICE_NOW_INSTANCE can't be set at the same time. Use one or the other"
+  else if sn_domain?
+    sn_fqdn = "https://#{sn_domain}"
+  else if sn_instance?
+    sn_fqdn = "https://#{sn_instance}.service-now.com"
+  robot.logger.debug("sn_fqdn: #{sn_fqdn}")
   ###
   The bit that does the work to ask Service Now for stuff is registered as an
   event so that you can consume this in other scripts if you'd like.
@@ -32,19 +42,13 @@ module.exports = (robot) ->
   ###
   robot.on "sn_record_get", (request) ->
     query_fields = Object.keys(request.fields)
-    sn_domain = process.env.HUBOT_SERVICE_NOW_DOMAIN
-    sn_instance = process.env.HUBOT_SERVICE_NOW_INSTANCE
-    if sn_domain? and sn_instance?
-      robot.logger.error "HUBOT_SERVICE_NOW_DOMAIN and \
-HUBOT_SERVICE_NOW_INSTANCE can't be set at the same time. Use one or the other"
-    else if sn_domain?
-      sn_fqdn = "https://#{sn_domain}"
-    else if sn_instance?
-      sn_fqdn = "https://#{sn_instance}.service-now.com"
+
+    # inject sys_id to query_fields for use later
+    query_fields.push 'sys_id'
 
     api_url = "#{sn_fqdn}/api/now/v2/table/#{request.table}"
-    req_args = "sysparm_query=number=#{request.rec_number}&\
-sysparm_display_value=true&sysparm_limit=1&sysparm_fields=#{query_fields}"
+    req_args = "sysparm_query=number=#{request.rec_number}&" +
+      "sysparm_display_value=true&sysparm_limit=1&sysparm_fields=#{query_fields}"
     sn_url = "#{api_url}?#{req_args}"
 
     robot.logger.debug "SN URL: #{sn_url}"
@@ -52,10 +56,10 @@ sysparm_display_value=true&sysparm_limit=1&sysparm_fields=#{query_fields}"
     sn_pass = process.env.HUBOT_SERVICE_NOW_PASSWORD
 
     unless sn_user? and sn_pass?
-      robot.logger.error "HUBOT_SERVICE_NOW_USER and HUBOT_SERVICE_NOW_PASSWORD\
- Must be defined!"
-      robot.send request.user, "Integration user name and password are not \
-defined. I can't look up Service Now Requests without them"
+      robot.logger.error "HUBOT_SERVICE_NOW_USER and HUBOT_SERVICE_NOW_PASSWORD " +
+        "Must be defined!"
+      robot.send request.user, "Integration user name and password are not " +
+        "defined. I can't look up Service Now Requests without them"
 
     robot.http(sn_url)
       .header('Accept', 'application/json')
@@ -64,35 +68,46 @@ defined. I can't look up Service Now Requests without them"
       .get() (err, res, body) ->
         if (err?)
           robot.send request.user, err
-          robot.send request.user, "Error was encountered while looking for \
-`#{request.rec_number}`"
-          robot.logger.error "Received error #{err} when looking for \
-`#{request.rec_number}`"
+          robot.send request.user, "Error was encountered while looking for " +
+            "`#{request.rec_number}`"
+          robot.logger.error "Received error #{err} when looking for " +
+            "`#{request.rec_number}`"
           return
 
         data = JSON.parse body
         result = data['result']
 
         unless result?
-          robot.send request.user, "Error was encountered while looking for \
-`#{request.rec_number}`"
-          robot.logger.error "Received error '#{data.error.message}' while \
-looking for '#{request.rec_number}'"
+          robot.send request.user, "Error was encountered while looking for " +
+            "`#{request.rec_number}`"
+          robot.logger.error "Received error '#{data.error.message}' while " +
+            "looking for '#{request.rec_number}'"
           return
 
         if (result.length < 1)
-          robot.send request.user, "Service Now returned 0 records for \
-'#{request.rec_number}'"
+          robot.send request.user, "Service Now returned 0 records for " +
+            "'#{request.rec_number}'"
         else
           rec_count = res.headers['X-Total-Count']
           if (rec_count > 1)
-            robot.send request.user, "Service Now returned #{rec_count} \
-records. Showing the first"
+            robot.send request.user, "Service Now returned #{rec_count} " +
+              "records. Showing the first"
           sn_single_result_fmt(request.user, request.fields,
             request.rec_number, result[0])
 
   sn_single_result_fmt = (user, fields, rec_number, result) ->
-    output = "Found *#{rec_number}:*"
+    # if we have a sys_id field in the results, use it to generate a URL to the record
+    if 'sys_id' in Object.keys(result)
+      # get record type from rec_number and look up service now table
+      rec_type = rec_number.match(/([A-z]{3,5})([0-9]{7})/)[1]
+      sn_table = table_lookup[rec_type]['table']
+
+      # construct URL to record
+      sn_url = "#{sn_fqdn}/nav_to.do?uri=/#{sn_table}.do?sys_id=#{result['sys_id']}"
+      # create hyperlink
+      output = "Found *<#{sn_url}|#{rec_number}>:*"
+    else
+      output = "Found *#{rec_number}:*"
 
     for k, v of fields
       robot.logger.debug "Getting #{k} from result"
