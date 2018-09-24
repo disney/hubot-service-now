@@ -1,13 +1,12 @@
 # hubot-service-now
-A hubot script to perform record lookups to a Service Now Instance
+A hubot script to perform record lookups to a Service Now Instance.
 
 ## Installation
 Add `hubot-service-now` to your `external-scripts.json` file:
 ```json
 "dependencies": {
-  "hubot": "^2.19.0",
+  "hubot": ">=2 <3",
   "hubot-redis-brain": "0.0.3",
-  "hubot-scripts": "^2.17.2",
   "hubot-service-now": "^1.0.0"
 }
 ```
@@ -27,6 +26,10 @@ In order to use this script, you will need to set a few environment variables:
 ### Testing
 This repository has a Gruntfile that describes a `test` task, which can be used for testing. The script is tested with `chai`, `nock`, and `hubot-test-helper`, and all new features should have associated tests, before the feature is released.
 To test the script, run `grunt test` from the repository root.
+
+## Supported Records and Fields
+The script currently supports retreiving these record types: CHG, INC, PRB, RITM, and the following fields are returned for each:
+
 
 ## Sample Interaction
 ```
