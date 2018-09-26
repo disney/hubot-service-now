@@ -201,13 +201,20 @@ module.exports = (robot) ->
     start_with_name = res.message.text.startsWith robot.name
 
     # don't do anything if bot was @ mentioned
-    return if start_with_mention or start_with_name
+    if start_with_mention or start_with_name
+      robot.logger.debug "robot.hear ignoring explicit Service Now request " +
+        " and allowing robot.respond to handle it"
+      return
 
     # don't do anything if listen is false
-    return unless robot.brain.get("sn_api.#{res.message.room}.listen")
+    unless robot.brain.get("sn_api.#{res.message.room}.listen")
+      robot.logger.debug "Ignoring Service Now request; sn listen is off"
+      return
 
     # ignore messages from bots
-    return if res.message.user.is_bot
+    if res.message.user.is_bot or res.message.user.slack?.is_bot
+      robot.logger.debug "Ignoring Service Now mention by bot"
+      return
 
     rec_type = res.match[1]
     rec_num = res.match[2]
