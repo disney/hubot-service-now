@@ -1,5 +1,9 @@
 # Changelog for hubot-service-now
 
+# v1.1.1
+- Fixed [#8](https://github.com/disney/hubot-service-now/issues/8) - Handle Slack's new location to save is_bot value for message user
+- Add some additional debug logging
+
 # v1.1.0
 - Add support for returning hyperlinked ticket IDs
   - This Fixes https://github.com/disney/hubot-service-now/issues/3
