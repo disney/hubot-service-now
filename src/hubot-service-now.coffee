@@ -99,7 +99,7 @@ module.exports = (robot) ->
     # if we have a sys_id field in the results, use it to generate a URL to the record
     if 'sys_id' in Object.keys(result)
       # get record type from rec_number and look up service now table
-      rec_type = rec_number.match(/([A-z]{3,5})([0-9]{7})/)[1]
+      rec_type = rec_number.match(/([A-z]{3,5})([0-9]{7,})/)[1]
       sn_table = table_lookup[rec_type]['table']
 
       # construct URL to record
@@ -116,7 +116,7 @@ module.exports = (robot) ->
     robot.send user, output
     return
 
-  robot.respond /(?:sn(?:ow)?|service now) ([A-z]{3,5})([0-9]{7})/i, (res) ->
+  robot.respond /(?:sn(?:ow)?|service now) ([A-z]{3,5})([0-9]{7,})/i, (res) ->
     rec_type = res.match[1]
     rec_num = res.match[2]
 
@@ -181,6 +181,16 @@ module.exports = (robot) ->
         'requested_by.name': 'Requested by',
         'opened_at': 'Opened At'
         'state': 'State'
+    CTASK:
+      table: 'change_task'
+      fields:
+        'short_description': 'Short Description',
+        'change_request.number': 'Change Request',
+        'cmdb_ci.name': 'CMDB CI',
+        'assignment_group.name': 'Assignment group',
+        'opened_by.name': 'Opened by',
+        'opened_at': 'Opened at'
+        'state': 'State'
     RITM:
       table: 'sc_req_item'
       fields:
@@ -195,7 +205,7 @@ module.exports = (robot) ->
   # also, we need to be careful to avoid interaction with the normal
   # robot.respond messages, and we also don't want to create a feedback loop
   # between bots
-  robot.hear ///(#{Object.keys(table_lookup).join('|')})([0-9]{7})///i, (res) ->
+  robot.hear ///(#{Object.keys(table_lookup).join('|')})([0-9]{7,})///i, (res) ->
     name_mention = "@#{robot.name}"
     start_with_mention = res.message.text.startsWith name_mention
     start_with_name = res.message.text.startsWith robot.name

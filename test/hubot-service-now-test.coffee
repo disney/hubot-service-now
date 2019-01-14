@@ -84,6 +84,30 @@ describe 'hubot-service-now', ->
         state:
           name: 'State'
           value: 'In Progress'
+    CTASK:
+      table: 'change_task'
+      fields:
+        short_description:
+          name: 'Short Description'
+          value: 'Put the cheeseburger on the table'
+        "change_request.number":
+          name: 'Change Request'
+          value: 'CHG0000001'
+        "cmdb_ci.name":
+          name: 'CMDB CI'
+          value: 'cheeseburger'
+        "assignment_group.name":
+          name: 'Assignment group'
+          value: 'cheeseburger-replacement'
+        "opened_by.name":
+          name: 'Opened by'
+          value: "cheeseburger-replaceament"
+        opened_at:
+          name: 'Opened at'
+          value: '1970-01-02 01:05:00'
+        state:
+          name: 'State'
+          value: 'In Progress'
     PRB:
       table: 'problem'
       fields:
@@ -249,5 +273,42 @@ describe 'hubot-service-now', ->
       @room.user.say('bob', "@hubot sn RITM0000001").then =>
         expect(@room.messages).to.eql [
           ['bob', "@hubot sn RITM0000001"]
+          ['hubot', response_message]
+        ]
+  #
+  context 'when incidents are over 10 million', ->
+    it 'properly handles record lookup', ->
+      # use INC record to test with
+      k = 'INC'
+      v = records[k]
+
+      # generate mocked API result
+      response_fields = {}
+      for k1, v1 of v.fields
+        response_fields[k1] = v1['value']
+      request_fields = Object.keys(v.fields).concat(['sys_id'])
+
+      nock('https://devtest.service-now.com')
+        .get("/api/now/v2/table/#{v.table}")
+        .query(
+          sysparm_query: "number=#{k}00000001",
+          sysparm_display_value: true,
+          sysparm_limit: 1,
+          sysparm_fields: request_fields.join(',')
+        )
+        .reply(200, {
+          result: [
+            response_fields
+          ]}, {
+            'X-Total-Count': 1
+        })
+
+      # generate the expected bot response
+      response_message = "Found *#{k}00000001:*"
+      for k1, v1 of v.fields
+        response_message += "\n*#{v1['name']}:* #{v1['value']}"
+      @room.user.say('bob', "@hubot sn #{k}00000001").then =>
+        expect(@room.messages).to.eql [
+          ['bob', "@hubot sn #{k}00000001"]
           ['hubot', response_message]
         ]

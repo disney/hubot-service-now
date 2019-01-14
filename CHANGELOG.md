@@ -1,5 +1,9 @@
 # Changelog for hubot-service-now
 
+# v1.2.0
+- [#10](https://github.com/disney/hubot-service-now/issues/10) - Use open-ended regex matching for the integer portion of ticket numbers
+- Add support for CTASK records
+
 # v1.1.1
 - Fixed [#8](https://github.com/disney/hubot-service-now/issues/8) - Handle Slack's new location to save is_bot value for message user
 - Add some additional debug logging
