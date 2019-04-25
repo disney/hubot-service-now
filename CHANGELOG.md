@@ -1,5 +1,12 @@
 # Changelog for hubot-service-now
 
+# v1.3.0
+- [#11](https://github.com/disney/hubot-service-now/issues/11) - Add Support for SCTASK records
+  - This required changing the regex match since the record type is a character longer than the others
+- CHG records: switch from "Opened At" to "Start" and "End"
+- Add explicit curly braces (address coffeelint rule)
+- Add spaces between closing square brackets (`]`) and closing curly braces (`}`) to (address coffeelint rule)
+
 # v1.2.0
 - [#10](https://github.com/disney/hubot-service-now/issues/10) - Use open-ended regex matching for the integer portion of ticket numbers
 - Add support for CTASK records

@@ -11,7 +11,7 @@ process.env.HUBOT_SERVICE_NOW_PASSWORD = 'beammeup'
 
 describe 'hubot-service-now', ->
   beforeEach ->
-    @room = helper.createRoom(httpd: false)
+    @room = helper.createRoom({ httpd: false })
 
   afterEach ->
     nock.cleanAll()
@@ -23,112 +23,186 @@ describe 'hubot-service-now', ->
   # record field name, and the value is another key/value pair that contains
   # the human-readable name that's also used in the script, plus a value
   # used for testing (essentially, what the API would respond with)
-  records =
-    RITM:
+  records = {
+    RITM: {
       table: 'sc_req_item'
-      fields:
-        short_description:
+      fields: {
+        short_description: {
           name: 'Short Description'
           value: 'Please locate the cheesburger'
-        "assignment_group.name":
+        }
+        "assignment_group.name": {
           name: 'Assignment group'
           value: 'cheesburger-recovery'
-        "opened_by.name":
+        }
+        "opened_by.name": {
           name: 'Opened by'
           value: 'Bob Jones'
-        opened_at:
+        }
+        opened_at: {
           name: 'Opened At'
           value: '1970-01-01 01:00:00'
-        state:
+        }
+        state: {
           name: 'State'
           value: 'In Progress'
-    INC:
+        }
+      }
+    }
+    SCTASK: {
+      table: 'sc_task'
+      fields: {
+        short_description: {
+          name: 'Short Description',
+          value: 'Locate Cheeeburger Task'
+        }
+        "request.number": {
+          name: 'Request',
+          value: 'REQ0000001'
+        }
+        "request_item.number": {
+          name: 'Request Item',
+          value: 'RITM0000001'
+        }
+        "request.requested_for.name": {
+          name: 'Requested For',
+          value: 'Bob Jones'
+        }
+        "assignment_group.name": {
+          name: 'Assignment Group',
+          value: 'cheeseburger-recovery'
+        }
+        "state": {
+          name: 'State'
+          value: 'In Progress'
+        }
+      }
+    }
+    INC: {
       table: 'incident'
-      fields:
-        short_description:
+      fields: {
+        short_description: {
           name: 'Short Description'
           value: 'Please locate the cheeseburger'
-        "assigned_to.name":
+        }
+        "assigned_to.name": {
           name: 'Assigned to'
           value: 'Jane Jones'
-        "opened_by.name":
+        }
+        "opened_by.name": {
           name: 'Opened by'
           value: 'Bob Jones'
-        opened_at:
+        }
+        opened_at: {
           name: 'Opened at'
           value: '1970-01-01 01:00:00'
-        priority:
+        }
+        priority: {
           name: 'Priority'
           value: '1'
-        state:
+        }
+        state: {
           name: 'State'
           value: '1 - Critical'
-    CHG:
+        }
+      }
+    }
+    CHG: {
       table: 'change_request'
-      fields:
-        short_description:
+      fields: {
+        short_description: {
           name: 'Short Description'
           value: 'Replace the cheeseburger'
-        "cmdb_ci.name":
+        }
+        "cmdb_ci.name": {
           name: 'CMDB CI'
           value: 'cheeseburger'
-        "assignment_group.name":
+        }
+        "assignment_group.name": {
           name: 'Assignment group'
           value: 'cheeseburger-replacement'
-        "requested_by.name":
+        }
+        "requested_by.name": {
           name: 'Requested by'
           value: 'Jane Jones'
-        opened_at:
-          name: 'Opened At'
+        }
+        start_date: {
+          name: 'Start Date'
           value: '1970-01-02 01:00:00'
-        state:
+        }
+        end_date: {
+          name: 'End Date'
+          value: '1970-01-02 02:00:00'
+        }
+        state: {
           name: 'State'
           value: 'In Progress'
-    CTASK:
+        }
+      }
+    }
+    CTASK: {
       table: 'change_task'
-      fields:
-        short_description:
+      fields: {
+        short_description: {
           name: 'Short Description'
           value: 'Put the cheeseburger on the table'
-        "change_request.number":
+        }
+        "change_request.number": {
           name: 'Change Request'
           value: 'CHG0000001'
-        "cmdb_ci.name":
+        }
+        "cmdb_ci.name": {
           name: 'CMDB CI'
           value: 'cheeseburger'
-        "assignment_group.name":
+        }
+        "assignment_group.name": {
           name: 'Assignment group'
           value: 'cheeseburger-replacement'
-        "opened_by.name":
+        }
+        "opened_by.name": {
           name: 'Opened by'
-          value: "cheeseburger-replaceament"
-        opened_at:
+          value: "cheeseburger-replacement"
+        }
+        opened_at: {
           name: 'Opened at'
           value: '1970-01-02 01:05:00'
-        state:
+        }
+        state: {
           name: 'State'
           value: 'In Progress'
-    PRB:
+        }
+      }
+    }
+    PRB: {
       table: 'problem'
-      fields:
-        short_description:
+      fields: {
+        short_description: {
           name: 'Short Description'
           value: 'Hamburger keeps getting lost'
-        "assigned_to.name":
+        }
+        "assigned_to.name": {
           name: 'Assigned to',
           value: 'Jone Bobs'
-        "opened_by.name":
+        }
+        "opened_by.name": {
           name: 'Opened by'
           value: "Bob Jones"
-        opened_at:
+        }
+        opened_at: {
           name: "Opened at"
           value: "1970-01-02 02:00:00"
-        priority:
+        }
+        priority: {
           name: 'Priority'
           value: '1 - Critical'
-        state:
+        }
+        state: {
           name: 'State'
           value: 'Open'
+        }
+      }
+    }
+  }
 
   # actual tests start here
   context 'with sn listen previously disabled (default)', ->
@@ -163,16 +237,16 @@ describe 'hubot-service-now', ->
 
       nock('https://devtest.service-now.com')
         .get("/api/now/v2/table/#{v.table}")
-        .query(
+        .query({
           sysparm_query: "number=#{k}0000001",
           sysparm_display_value: true,
           sysparm_limit: 1,
           sysparm_fields: request_fields.join(',')
-        )
+        })
         .reply(200, {
           result: [
             response_fields
-          ]}, {
+          ] }, {
             'X-Total-Count': 1
         })
 
@@ -215,16 +289,16 @@ describe 'hubot-service-now', ->
         # use nock to stub the response from the API call
         nock('https://devtest.service-now.com')
           .get("/api/now/v2/table/#{v.table}")
-          .query(
+          .query({
             sysparm_query: "number=#{k}0000001",
             sysparm_display_value: true,
             sysparm_limit: 1,
             sysparm_fields: request_fields.join(',')
-          )
+          })
           .reply(200, {
             result: [
               response_fields
-            ]}, {
+            ] }, {
               'X-Total-Count': 1
           })
 
@@ -251,16 +325,16 @@ describe 'hubot-service-now', ->
 
       nock('https://devtest.service-now.com')
         .get("/api/now/v2/table/#{record['table']}")
-        .query(
+        .query({
           sysparm_query: "number=RITM0000001",
           sysparm_display_value: true,
           sysparm_limit: 1,
           sysparm_fields: request_fields.join(',')
-        )
+        })
         .reply(200, {
           result: [
             response_fields
-          ]}, {
+          ] }, {
             'X-Total-Count': 1
         })
 
@@ -290,16 +364,16 @@ describe 'hubot-service-now', ->
 
       nock('https://devtest.service-now.com')
         .get("/api/now/v2/table/#{v.table}")
-        .query(
+        .query({
           sysparm_query: "number=#{k}00000001",
           sysparm_display_value: true,
           sysparm_limit: 1,
           sysparm_fields: request_fields.join(',')
-        )
+        })
         .reply(200, {
           result: [
             response_fields
-          ]}, {
+          ] }, {
             'X-Total-Count': 1
         })
 

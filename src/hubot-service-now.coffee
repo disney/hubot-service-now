@@ -116,7 +116,7 @@ module.exports = (robot) ->
     robot.send user, output
     return
 
-  robot.respond /(?:sn(?:ow)?|service now) ([A-z]{3,5})([0-9]{7,})/i, (res) ->
+  robot.respond /(?:sn(?:ow)?|service now) ([A-z]{3,6})([0-9]{7,})/i, (res) ->
     rec_type = res.match[1]
     rec_num = res.match[2]
 
@@ -153,37 +153,44 @@ module.exports = (robot) ->
     res.send "I #{listen_friendly} listen for Service Now"
 
   # the record types we know about, and their table names
-  table_lookup =
-    PRB:
+  table_lookup = {
+    PRB: {
       table: 'problem',
-      fields:
+      fields: {
         'short_description': 'Short Description',
         'assigned_to.name': 'Assigned to',
         'opened_by.name': 'Opened by',
         'opened_at': 'Opened at',
         'priority': 'Priority'
         'state': 'State'
-    INC:
+      }
+    }
+    INC: {
       table: 'incident',
-      fields:
+      fields: {
         'short_description': 'Short Description',
         'assigned_to.name': 'Assigned to',
         'opened_by.name': 'Opened by',
         'opened_at': 'Opened at',
         'priority': 'Priority'
         'state': 'State'
-    CHG:
+      }
+    }
+    CHG: {
       table: 'change_request'
-      fields:
+      fields: {
         'short_description': 'Short Description',
         'cmdb_ci.name': 'CMDB CI',
         'assignment_group.name': 'Assignment group',
         'requested_by.name': 'Requested by',
-        'opened_at': 'Opened At'
+        'start_date': 'Start Date',
+        'end_date': 'End Date',
         'state': 'State'
-    CTASK:
+      }
+    }
+    CTASK: {
       table: 'change_task'
-      fields:
+      fields: {
         'short_description': 'Short Description',
         'change_request.number': 'Change Request',
         'cmdb_ci.name': 'CMDB CI',
@@ -191,14 +198,30 @@ module.exports = (robot) ->
         'opened_by.name': 'Opened by',
         'opened_at': 'Opened at'
         'state': 'State'
-    RITM:
+      }
+    }
+    RITM: {
       table: 'sc_req_item'
-      fields:
+      fields: {
         'short_description': 'Short Description',
         'assignment_group.name': 'Assignment group',
         'opened_by.name': 'Opened by',
         'opened_at': 'Opened At'
         'state': 'State'
+      }
+    }
+    SCTASK: {
+      table: 'sc_task'
+      fields: {
+        'short_description': 'Short Description',
+        'request.number': 'Request',
+        'request_item.number': 'Request Item',
+        'request.requested_for.name': 'Requested For',
+        'assignment_group.name': 'Assignment Group',
+        'state': 'State'
+      }
+    }
+  }
 
   # this works similar to the robot.respond message above,
   # but it looks only for the record types we know about
