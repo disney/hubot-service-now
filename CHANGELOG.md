@@ -1,14 +1,20 @@
 # Changelog for hubot-service-now
 
+# v1.4.0
+- Fixed [#13](https://github.com/disney/hubot-service-now/issues/13) - Fix regex in formatter
+- Fixed [#14](https://github.com/disney/hubot-service-now/issues/14) - Add support for STRY (Scrum Story) and STSK (Scrum Task) records
+- Add debug logging for Service Now response
+- Fix extra space in 'ignoring explicit Service Now request' debug log message
+
 # v1.3.0
-- [#11](https://github.com/disney/hubot-service-now/issues/11) - Add Support for SCTASK records
+- Fixed [#11](https://github.com/disney/hubot-service-now/issues/11) - Add Support for SCTASK records
   - This required changing the regex match since the record type is a character longer than the others
 - CHG records: switch from "Opened At" to "Start" and "End"
 - Add explicit curly braces (address coffeelint rule)
 - Add spaces between closing square brackets (`]`) and closing curly braces (`}`) to (address coffeelint rule)
 
 # v1.2.0
-- [#10](https://github.com/disney/hubot-service-now/issues/10) - Use open-ended regex matching for the integer portion of ticket numbers
+- Fixed [#10](https://github.com/disney/hubot-service-now/issues/10) - Use open-ended regex matching for the integer portion of ticket numbers
 - Add support for CTASK records
 
 # v1.1.1

@@ -1,6 +1,6 @@
 {
   "name": "hubot-service-now",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "A hubot script to perform record lookups to a Service Now instance",
   "main": "index.coffee",
   "repository": {

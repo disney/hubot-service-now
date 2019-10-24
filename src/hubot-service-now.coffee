@@ -74,6 +74,7 @@ module.exports = (robot) ->
             "`#{request.rec_number}`"
           return
 
+        robot.logger.debug("Received body from Service Now: #{body}")
         data = JSON.parse body
         result = data['result']
 
@@ -99,7 +100,7 @@ module.exports = (robot) ->
     # if we have a sys_id field in the results, use it to generate a URL to the record
     if 'sys_id' in Object.keys(result)
       # get record type from rec_number and look up service now table
-      rec_type = rec_number.match(/([A-z]{3,5})([0-9]{7,})/)[1]
+      rec_type = rec_number.match(/([A-z]{3,6})([0-9]{7,})/)[1]
       sn_table = table_lookup[rec_type]['table']
 
       # construct URL to record
@@ -221,6 +222,26 @@ module.exports = (robot) ->
         'state': 'State'
       }
     }
+    STRY: {
+      table: 'rm_story'
+      fields: {
+        'short_description': 'Short Description',
+        'epic.short_description': 'Epic',
+        'opened_by.name': 'Opened by',
+        'product.name': 'Product',
+        'state': 'State'
+      }
+    }
+    STSK: {
+      table: 'rm_scrum_task'
+      fields: {
+        'short_description': 'Short Description'
+        'opened_by.name': 'Opened by',
+        'state': 'State',
+        'story.number': 'Story Number',
+        'story.short_description': 'Story Description'
+      }
+    }
   }
 
   # this works similar to the robot.respond message above,
@@ -236,7 +257,7 @@ module.exports = (robot) ->
     # don't do anything if bot was @ mentioned
     if start_with_mention or start_with_name
       robot.logger.debug "robot.hear ignoring explicit Service Now request " +
-        " and allowing robot.respond to handle it"
+        "and allowing robot.respond to handle it"
       return
 
     # don't do anything if listen is false
